@@ -1044,3 +1044,29 @@ table.data .bad  { color: #991b1b; font-weight: 600; }
 /* give the carousel room for the native video controls */
 #mead-carousel .slider-navigation-previous,
 #mead-carousel .slider-navigation-next { z-index: 3; }
+
+/* --- Pose-transfer demo panels -------------------------------------- */
+.pose-demo { margin: 1.75rem 0; }
+.pose-demo video {
+  width: 100%;
+  display: block;
+  aspect-ratio: 3 / 1;
+  border-radius: var(--border-radius);
+  background: #000;
+  box-shadow: var(--shadow-md);
+}
+.pose-demo figcaption {
+  margin-top: 0.6rem;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.pose-demo figcaption strong { color: var(--text-primary); }
+.result-group-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--primary-color);
+  margin: 2.25rem 0 0.75rem;
+}

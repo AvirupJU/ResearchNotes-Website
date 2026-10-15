@@ -94,7 +94,7 @@ window.addEventListener('scroll', function() {
 // Video carousel autoplay when in view
 function setupVideoCarouselAutoplay() {
     const carouselVideos = document.querySelectorAll(
-        '.results-carousel:not([data-video-sync]) video');
+        '.results-carousel:not([data-video-sync]) video, video.autoplay-in-view');
     
     if (carouselVideos.length === 0) return;
     

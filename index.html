@@ -372,6 +372,40 @@
         </div>
 
         <h3 class="title is-5">Results</h3>
+
+        <p class="result-group-label">Pose transfer</p>
+        <p>
+          Three panels per clip, labelled in-frame:
+          <strong>audio-only</strong> &middot; <strong>with pose control</strong> &middot;
+          <strong>GT pose</strong>. The driving pose is retargeted onto each anchor's geometry, so
+          the avatar is asked to follow the driver's head without inheriting his face.
+        </p>
+
+        <figure class="pose-demo">
+          <video src="static/videos/posedemo_W009_sad.mp4" class="autoplay-in-view"
+                 muted loop playsinline controls preload="metadata"
+                 aria-label="W009 sad anchor, pose transfer: audio-only, with pose control, ground-truth pose"></video>
+          <figcaption>
+            <strong>W009, sad anchor.</strong> The pose-controlled head turns and tilts with the
+            driver where the audio-only panel stays near-static. Expression does not come along:
+            the avatar reads sad in both panels, which is the same anchor-binding the override test
+            below isolates.
+          </figcaption>
+        </figure>
+
+        <figure class="pose-demo">
+          <video src="static/videos/posedemo_M003_happy.mp4" class="autoplay-in-view"
+                 muted loop playsinline controls preload="metadata"
+                 aria-label="M003 happy anchor, pose transfer: audio-only, with pose control, ground-truth pose"></video>
+          <figcaption>
+            <strong>M003, happy anchor.</strong> Same behaviour on the second subject. The driver
+            here is mostly frontal and fairly subtle, so the transferred motion is modest &mdash;
+            the point is that the head moves <em>with</em> him at all, which the additive branch
+            could not do.
+          </figcaption>
+        </figure>
+
+        <p class="result-group-label">Expression override</p>
         <p>
           The override test in four cells. In each clip the <em>anchor</em> still sets the KV sink
           and a different clip's <em>track</em> supplies the audio and the per-frame expression
