@@ -243,22 +243,62 @@
             <span class="num">+0.02</span> (masked), independent of how motion is encoded.
           </li>
           <li>
-            <strong>Head pose went from inert to reactive &mdash; but only via spatial
+            <strong>Head pose became controllable &mdash; but only via spatial
             injection.</strong> A spatially-uniform additive nudge cannot assert a rotation: the
             baseline branch simply ignores a swapped pose command
             (command-response correlation <span class="num">+0.75</span>). Replacing the pose role
-            with a rendered-skeleton PoseGuider drops that to <span class="num">+0.01</span>
-            (3/3 pairs move toward the command) while <em>improving</em> lip-sync
-            (Sync-C <span class="num">2.46 &rarr; 4.00</span>).
+            with a rendered-skeleton PoseGuider drops that to <span class="num">+0.01</span>,
+            more than halves the EMOCA pose error against ground truth, and <em>improves</em>
+            lip-sync (Sync-C <span class="num">2.46 &rarr; 4.00</span>).
           </li>
         </ul>
+
+        <p>
+          <strong>Pose accuracy.</strong> Head pose is estimated with EMOCA on both the generated
+          and the ground-truth video, and scored as the Euclidean distance between them
+          (lower is better). The baseline here is the <strong>audio-only</strong> model &mdash; the
+          frozen student with no pose conditioning at all:
+        </p>
+
+        <div class="table-wrap">
+          <table class="data">
+            <thead>
+              <tr>
+                <th>EMOCA pose distance to GT &darr;</th>
+                <th>Audio-only baseline</th>
+                <th>Ours (PoseGuider)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Self-reconstruction</td>
+                <td class="num">5.04</td>
+                <td class="num good">2.30</td>
+              </tr>
+              <tr>
+                <td>Cross-identity swap</td>
+                <td class="num">5.23</td>
+                <td class="num good">3.1</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="table-note">
+          Pose error is cut by more than half in self-reconstruction and by ~40% under swap, where
+          the pose command comes from a different identity.
+        </p>
+
+        <p>
+          <strong>Reactivity and lip-sync.</strong> Measured instead against the
+          <strong>additive-motion</strong> branch, to isolate what the spatial injection changes:
+        </p>
 
         <div class="table-wrap">
           <table class="data">
             <thead>
               <tr>
                 <th>Metric</th>
-                <th>Baseline (additive motion)</th>
+                <th>Additive-motion baseline</th>
                 <th>+ PoseGuider</th>
               </tr>
             </thead>
@@ -269,28 +309,13 @@
                 <td class="num good">+0.01 / +0.10 / +0.01</td>
               </tr>
               <tr>
-                <td>Pose-toward-command passes</td>
-                <td class="num">1 / 3</td>
-                <td class="num good">3 / 3</td>
-              </tr>
-              <tr>
                 <td>SyncNet Sync-C, self &uarr;</td>
                 <td class="num">2.46</td>
                 <td class="num good">4.00</td>
               </tr>
-              <tr>
-                <td>Mouth jitter, &times; real &darr;</td>
-                <td class="num">0.73 / 0.74 / 1.33</td>
-                <td class="num good">0.37 / 0.60 / 1.05</td>
-              </tr>
             </tbody>
           </table>
         </div>
-        <p class="table-note">
-          Pose <em>reactivity</em> is established; faithful pose <em>tracking</em> is not &mdash;
-          accuracy against the commanded rotation is only ~1/3 per pair, and our solvePnP pose
-          metric proved unreliable, so pose is judged visually.
-        </p>
 
         <h3 class="title is-5">Where it stops: expression is bound to the reference image</h3>
         <p>
