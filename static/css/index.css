@@ -776,10 +776,12 @@ a:focus {
 }
 
 /* --- Strategic goals ------------------------------------------------ */
+.content ol.goal-list:not([type]),
 .goal-list {
   counter-reset: goal;
   list-style: none;
   margin: 0;
+  margin-left: 0;
   padding: 0;
 }
 .goal-list li {
@@ -845,9 +847,11 @@ a:focus {
 .pill--open  { background: #fef3c7; color: #92400e; }
 
 /* --- Finding lists -------------------------------------------------- */
+.content ul.findings,
 .findings {
   list-style: none;
   margin: 0 0 1.5rem 0;
+  margin-left: 0;
   padding: 0;
 }
 .findings li {
