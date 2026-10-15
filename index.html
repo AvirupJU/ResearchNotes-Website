@@ -244,8 +244,8 @@
             <strong>Head pose became controllable &mdash; but only via spatial
             injection.</strong> A spatially-uniform additive nudge cannot assert a rotation: the
             baseline branch simply ignores a swapped pose command
-            (command-response correlation <span class="num">+0.75</span>). Replacing the pose role
-            with the rendered-skeleton pose branch drops that to <span class="num">+0.01</span>,
+            (mean command-response correlation <span class="num">+0.72</span>). Replacing the pose
+            role with the rendered-skeleton pose branch drops that to <span class="num">+0.04</span>,
             more than halves the EMOCA pose error against ground truth, and <em>improves</em>
             lip-sync (Sync-C <span class="num">2.46 &rarr; 4.00</span>).
           </li>
@@ -302,9 +302,9 @@
             </thead>
             <tbody>
               <tr>
-                <td>Pose command-response, corr(swap, self) &darr;</td>
-                <td class="num">+0.75 / +0.68 / +0.74 <em>(inert)</em></td>
-                <td class="num good">+0.01 / +0.10 / +0.01</td>
+                <td>Pose command-response, mean corr(swap, self) &darr;</td>
+                <td class="num">+0.72 <em>(inert)</em></td>
+                <td class="num good">+0.04</td>
               </tr>
               <tr>
                 <td>SyncNet Sync-C, self &uarr;</td>
