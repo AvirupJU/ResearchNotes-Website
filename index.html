@@ -167,11 +167,11 @@
               <em>style anchor</em> in the KV cache, fed zero audio; a baked-in audio branch owns
               the lips. See the anchor structure below.</dd>
           <dt>What we add</dt>
-          <dd>A trainable motion branch (~0.78 M params) and a spatial PoseGuider (~3.08 M),
+          <dd>A trainable expression branch (~0.78 M params) and a spatial pose branch (~3.08 M),
               both zero-initialised, injected additively into blocks 2&ndash;15 and gated by a
               mouth mask so audio keeps the mouth.</dd>
           <dt>Scale</dt>
-          <dd>11,050 Hallo3 clips, 10k steps; evaluated on subject-disjoint HDTF held-out pairs
+          <dd>11,000 talking video clips, 10k steps; evaluated on subject-disjoint HDTF held-out pairs
               plus a controlled MEAD protocol.</dd>
         </dl>
 
@@ -243,13 +243,6 @@
             <span class="num">+0.02</span> (masked), independent of how motion is encoded.
           </li>
           <li>
-            <strong>A holistic expression latent plus causal smoothing.</strong> Swapping
-            hand-built landmark/PCA labels for a 512-d VASA latent wins on pose but costs
-            temporal jitter; a causal EMA (&alpha;&nbsp;=&nbsp;0.5) cuts jitter from
-            <span class="num">1.70&times;</span> to <span class="num">1.19&times;</span> real at
-            no lip-sync cost and no identity drift.
-          </li>
-          <li>
             <strong>Head pose went from inert to reactive &mdash; but only via spatial
             injection.</strong> A spatially-uniform additive nudge cannot assert a rotation: the
             baseline branch simply ignores a swapped pose command
@@ -257,10 +250,6 @@
             with a rendered-skeleton PoseGuider drops that to <span class="num">+0.01</span>
             (3/3 pairs move toward the command) while <em>improving</em> lip-sync
             (Sync-C <span class="num">2.46 &rarr; 4.00</span>).
-          </li>
-          <li>
-            <strong>It generalises.</strong> Trained at scale, the recipe beats the landmark
-            baseline on lip disentanglement and SyncNet on subject-disjoint held-out pairs.
           </li>
         </ul>
 
