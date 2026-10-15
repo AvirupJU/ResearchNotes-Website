@@ -325,13 +325,6 @@
 
         <ul class="findings findings--wall">
           <li>
-            <strong>Losses cannot manufacture the split.</strong> Label-masking, a region-split
-            invariance loss, and a swap-consistency loss were all tried. The best pulled lip-leak
-            to <span class="num">&minus;0.05</span> at 3k steps, then regressed to
-            <span class="num">+0.09</span> by 5k with high variance. Natural data does not contain
-            the lip&harr;expression independence the loss is asked to find.
-          </li>
-          <li>
             <strong>Text is not a knob.</strong> Captioning the same render
             &ldquo;smiling&rdquo; vs &ldquo;angry&rdquo; moves 3 of 4 expression channels in the
             <em>same</em> direction &mdash; a conditioning nudge, not comprehension. The distilled
@@ -346,20 +339,10 @@
             A smiling reference smiles for 49 frames; it never relaxes to neutral.
           </li>
           <li>
-            <strong>Identity and expression are the same tensor.</strong> Turning the anchor down
-            does reduce the smile &mdash; and takes identity with it: ArcFace similarity to the
-            reference collapses <span class="num">0.89 &rarr; 0.42</span> and generation
-            destabilises (face-detect rate <span class="num">1.00 &rarr; 0.70</span>). Per-block
-            ablation shows identity redundantly spread across all 30 block-sinks and expression
-            <em>not</em> block-separable: it saturates with no knee. A scalar cannot separate them.
-          </li>
-          <li>
-            <strong>The decisive test: a driving track cannot override the anchor.</strong> A
+            <strong>Diagnostic: A
             controlled MEAD design (2 subjects &times; 3 anchor emotions &times; 3 driving-track
-            emotions, same-subject so identity is not a confound) gives 18 cells. Only
-            <span class="num">5 / 14</span> conflicting cells moved toward the track. A
-            sad-anchored avatar driven by a strongly happy track still wears the sad face; the
-            angry track never angers any output. Across a row, the anchor sets the tone.
+            emotions, same-subject so identity is not a confound) gives 18 predictions. 
+            A driving track cannot override the anchor.</strong>. A sad-anchored avatar driven by a strongly happy track still wears the sad face.
           </li>
         </ul>
 
@@ -389,10 +372,70 @@
         </div>
 
         <h3 class="title is-5">Results</h3>
-        <div class="results-slot">
-          <i class="fas fa-film"></i>
-          Pose-transfer and MEAD override clips to be added here.
+        <p>
+          The override test in four cells. In each clip the <em>anchor</em> still sets the KV sink
+          and a different clip's <em>track</em> supplies the audio and the per-frame expression
+          command. If expression were controllable, the track would win.
+        </p>
+
+        <div id="mead-carousel" class="results-carousel" data-video-sync>
+          <div class="item">
+            <div class="mead-cell">
+              <video src="static/videos/mead_M003_Asad_Thappy.mp4"
+                     muted loop playsinline controls preload="metadata"
+                     aria-label="M003, sad anchor driven by happy track"></video>
+              <p class="mead-cap">
+                <span class="tag-anchor">anchor: sad</span>
+                <span class="tag-track">track: happy</span>
+                <span class="subject">M003</span>
+              </p>
+              <p class="mead-read">A strongly happy track drives the mouth, but the furrowed brow and downturned set of the sad anchor stay exactly where they were.</p>
+            </div>
+          </div>
+          <div class="item">
+            <div class="mead-cell">
+              <video src="static/videos/mead_M003_Ahappy_Tangry.mp4"
+                     muted loop playsinline controls preload="metadata"
+                     aria-label="M003, happy anchor driven by angry track"></video>
+              <p class="mead-cap">
+                <span class="tag-anchor">anchor: happy</span>
+                <span class="tag-track">track: angry</span>
+                <span class="subject">M003</span>
+              </p>
+              <p class="mead-read">The reverse conflict, same outcome: the angry track never angers the output &mdash; the anchor&rsquo;s smile holds for the whole clip.</p>
+            </div>
+          </div>
+          <div class="item">
+            <div class="mead-cell">
+              <video src="static/videos/mead_W009_Asad_Thappy.mp4"
+                     muted loop playsinline controls preload="metadata"
+                     aria-label="W009, sad anchor driven by happy track"></video>
+              <p class="mead-cap">
+                <span class="tag-anchor">anchor: sad</span>
+                <span class="tag-track">track: happy</span>
+                <span class="subject">W009</span>
+              </p>
+              <p class="mead-read">The second subject repeats it. The happy track cannot make the sad-anchored avatar smile; only the mouth, which audio owns anyway, moves.</p>
+            </div>
+          </div>
+          <div class="item">
+            <div class="mead-cell">
+              <video src="static/videos/mead_W009_Ahappy_Tangry.mp4"
+                     muted loop playsinline controls preload="metadata"
+                     aria-label="W009, happy anchor driven by angry track"></video>
+              <p class="mead-cap">
+                <span class="tag-anchor">anchor: happy</span>
+                <span class="tag-track">track: angry</span>
+                <span class="subject">W009</span>
+              </p>
+              <p class="mead-read">Anchor happy, track angry. Across a row of fixed anchor the faces look alike &mdash; the anchor sets the tone and the track only weakly modulates it.</p>
+            </div>
+          </div>
         </div>
+        <p class="table-note" style="text-align:center;">
+          Muted for autoplay &mdash; unmute in the player to hear the driving track.
+          Each cell is 3.2 s; use the arrows to step through.
+        </p>
 
       </div>
     </section>

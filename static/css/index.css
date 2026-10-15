@@ -995,3 +995,52 @@ table.data .bad  { color: #991b1b; font-weight: 600; }
 .keyseq .anchor-style { border-color: var(--primary-color); color: var(--primary-color); }
 .keyseq .anchor-temp  { border-color: #0ea5e9; color: #0369a1; }
 .keyseq .sep { border: none; background: none; color: var(--text-light); font-weight: 400; padding: 0.5rem 0; }
+
+/* --- MEAD override carousel ----------------------------------------- */
+.mead-cell {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 0 0.5rem 0.5rem;
+  text-align: center;
+}
+.mead-cell video {
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 1 / 1;
+  display: block;
+  border-radius: var(--border-radius);
+  background: #000;
+  box-shadow: var(--shadow-md);
+}
+.mead-cap {
+  margin: 0.9rem 0 0.35rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.45rem;
+}
+.mead-cap .tag-anchor,
+.mead-cap .tag-track {
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.mead-cap .tag-anchor { background: #e0e7ff; color: #3730a3; }
+.mead-cap .tag-track  { background: #fef3c7; color: #92400e; }
+.mead-cap .subject    { color: var(--text-light); font-weight: 500; }
+.mead-read {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  min-height: 3.6em;
+}
+/* give the carousel room for the native video controls */
+#mead-carousel .slider-navigation-previous,
+#mead-carousel .slider-navigation-next { z-index: 3; }

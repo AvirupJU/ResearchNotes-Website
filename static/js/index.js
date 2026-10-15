@@ -93,7 +93,8 @@ window.addEventListener('scroll', function() {
 
 // Video carousel autoplay when in view
 function setupVideoCarouselAutoplay() {
-    const carouselVideos = document.querySelectorAll('.results-carousel video');
+    const carouselVideos = document.querySelectorAll(
+        '.results-carousel:not([data-video-sync]) video');
     
     if (carouselVideos.length === 0) return;
     
@@ -120,6 +121,58 @@ function setupVideoCarouselAutoplay() {
     });
 }
 
+
+// Play only the video on the visible slide of a managed carousel.
+// Slide visibility is decided geometrically (the slide's horizontal centre inside
+// the carousel viewport), which stays correct with looped/cloned slides.
+function syncCarouselVideos(root) {
+    if (root.dataset.inView === 'false') {
+        root.querySelectorAll('video').forEach(function (v) { v.pause(); });
+        return;
+    }
+    const box = root.getBoundingClientRect();
+    root.querySelectorAll('video').forEach(function (v) {
+        const r = v.getBoundingClientRect();
+        if (r.width === 0) { v.pause(); return; }
+        const centre = r.left + r.width / 2;
+        if (centre > box.left + 4 && centre < box.right - 4) {
+            v.play().catch(function () { /* autoplay policy */ });
+        } else {
+            v.pause();
+            v.currentTime = 0;
+        }
+    });
+}
+
+function setupManagedCarousels(instances) {
+    document.querySelectorAll('[data-video-sync]').forEach(function (root) {
+        const sync = function () { syncCarouselVideos(root); };
+
+        // pause everything while the carousel is off-screen
+        if ('IntersectionObserver' in window) {
+            new IntersectionObserver(function (entries) {
+                entries.forEach(function (e) {
+                    root.dataset.inView = e.isIntersecting ? 'true' : 'false';
+                    sync();
+                });
+            }, { threshold: 0.25 }).observe(root);
+        } else {
+            root.dataset.inView = 'true';
+        }
+
+        // re-sync after the slide transition settles
+        (instances || []).forEach(function (inst) {
+            if (inst && inst.element === root && typeof inst.on === 'function') {
+                inst.on('after:show', function () { setTimeout(sync, 60); });
+            }
+        });
+        root.addEventListener('transitionend', sync);
+        window.addEventListener('resize', sync);
+
+        setTimeout(sync, 120);
+    });
+}
+
 $(document).ready(function() {
     // Check for click events on the navbar burger icon
 
@@ -139,5 +192,22 @@ $(document).ready(function() {
     
     // Setup video autoplay for carousel
     setupVideoCarouselAutoplay();
+
+    // The MEAD carousel is attached separately: its options must be real booleans.
+    // Passing them as data-* would hand bulma-carousel the STRING "false", which is
+    // truthy, and autoplay would switch itself back on.
+    var managed = [];
+    if (document.getElementById('mead-carousel')) {
+        managed = bulmaCarousel.attach('#mead-carousel', {
+            slidesToShow: 1,
+            slidesToScroll: 1,
+            loop: true,
+            infinite: true,
+            autoplay: false
+        });
+    }
+
+    // Slide-aware playback for carousels that opt in via data-video-sync
+    setupManagedCarousels((carousels || []).concat(managed || []));
 
 })
