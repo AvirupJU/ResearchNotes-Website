@@ -152,19 +152,13 @@
           <dd>Distilled Wan2.1-T2V-1.3B Self-Forcing student, image-to-video, block-causal KV
               cache. Entirely frozen.</dd>
           <dt>Sampling</dt>
-          <dd>A diffusion-forcing <em>diagonal rollout</em>, not an N-step sampler re-denoising one
-              tensor. A sliding window holds four 4-frame blocks, each sitting at a different noise
-              level &mdash; a staircase (1000 / 800 / 400 / 200). Every network forward advances the
+          <dd>A diffusion-forcing <em>diagonal rollout</em>. A sliding window holds four 4-frame blocks, each sitting at a different noise
+              level. Every forward advances the
               whole diagonal by one: the block that reaches the bottom exits clean, the others each
-              step down a level, and a fresh pure-noise block enters at the back. So a block is
-              refined through four noise levels over its lifetime in the window, while the
-              steady-state cost is <strong>one forward per emitted block</strong>
-              (&asymp;&nbsp;<span class="num">n_blocks + 3</span> in total) &mdash; which is what
-              makes it real-time. The four levels are spread across the window, not re-applied to
-              one block.</dd>
+              step down a level, and a fresh pure-noise block enters at the back.</dd>
           <dt>Conditioning</dt>
           <dd>Identity and appearance arrive through a persistent reference-image
-              <em>style anchor</em> in the KV cache, fed zero audio; a baked-in audio branch owns
+              <em>style anchor</em> in the KV cache, fed zero audio; a baked-in audio branch controls
               the lips. See the anchor structure below.</dd>
           <dt>What we add</dt>
           <dd>A trainable expression branch (~0.78 M params) and a spatial pose branch (~3.08 M),
@@ -237,7 +231,7 @@
         <h3 class="title is-5">What worked</h3>
         <ul class="findings findings--win">
           <li>
-            <strong>Region ownership is the disentangler.</strong> Masking the motion branch out
+            <strong>Region ownership is the disentangler.</strong> Masking the expression branch out
             of a mouth box &mdash; not any loss term &mdash; is what keeps the lips audio-driven.
             Lip-leak falls from <span class="num">+0.51</span> (no mask) to
             <span class="num">+0.02</span> (masked), independent of how motion is encoded.
@@ -247,7 +241,7 @@
             injection.</strong> A spatially-uniform additive nudge cannot assert a rotation: the
             baseline branch simply ignores a swapped pose command
             (command-response correlation <span class="num">+0.75</span>). Replacing the pose role
-            with a rendered-skeleton PoseGuider drops that to <span class="num">+0.01</span>,
+            with the rendered-skeleton pose branch drops that to <span class="num">+0.01</span>,
             more than halves the EMOCA pose error against ground truth, and <em>improves</em>
             lip-sync (Sync-C <span class="num">2.46 &rarr; 4.00</span>).
           </li>
@@ -266,7 +260,7 @@
               <tr>
                 <th>EMOCA pose distance to GT &darr;</th>
                 <th>Audio-only baseline</th>
-                <th>Ours (PoseGuider)</th>
+                <th>Ours (pose branch)</th>
               </tr>
             </thead>
             <tbody>
@@ -290,7 +284,7 @@
 
         <p>
           <strong>Reactivity and lip-sync.</strong> Measured instead against the
-          <strong>additive-motion</strong> branch, to isolate what the spatial injection changes:
+          <strong>additive expression</strong> branch, to isolate what the spatial injection changes:
         </p>
 
         <div class="table-wrap">
@@ -298,8 +292,8 @@
             <thead>
               <tr>
                 <th>Metric</th>
-                <th>Additive-motion baseline</th>
-                <th>+ PoseGuider</th>
+                <th>Additive expression branch</th>
+                <th>+ pose branch</th>
               </tr>
             </thead>
             <tbody>
