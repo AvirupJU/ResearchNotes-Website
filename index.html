@@ -5,22 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <!-- Primary Meta Tags -->
-  <meta name="title" content="Research Notes">
-  <meta name="description" content="Research notes and write-ups.">
+  <meta name="title" content="Streaming Diffusion Avatars — Research Notes">
+  <meta name="description" content="Research notes on controllable, conversational streaming avatars built on distilled diffusion models: post-hoc motion control without redistillation, and a real-time conversational avatar loop.">
+  <meta name="keywords" content="talking head, diffusion models, streaming avatars, diffusion forcing, self-forcing, distillation, motion control, conversational agents, real-time">
   <meta name="author" content="Avirup Dey">
   <meta name="robots" content="index, follow">
 
   <!-- Open Graph -->
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Research Notes">
-  <meta property="og:description" content="Research notes and write-ups.">
-  <!-- TODO: set once the site has a URL, e.g. https://avirupju.github.io/ResearchNotes-Website -->
-  <meta property="og:url" content="">
+  <meta property="og:title" content="Streaming Diffusion Avatars — Research Notes">
+  <meta property="og:description" content="Post-hoc motion control on a distilled audio-driven DiT, and a real-time conversational avatar that reads the user and responds.">
+  <meta property="og:url" content="https://avirupju.github.io/ResearchNotes-Website">
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="Research Notes">
-  <meta name="twitter:description" content="Research notes and write-ups.">
+  <meta name="twitter:title" content="Streaming Diffusion Avatars — Research Notes">
+  <meta name="twitter:description" content="Post-hoc motion control on a distilled audio-driven DiT, and a real-time conversational avatar that reads the user and responds.">
 
   <meta name="theme-color" content="#2563eb">
 
@@ -30,7 +30,7 @@
   <link rel="preconnect" href="https://ajax.googleapis.com">
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
 
-  <title>Research Notes</title>
+  <title>Streaming Diffusion Avatars</title>
 
   <!-- TODO: add your own favicon at static/images/favicon.ico and uncomment -->
   <!-- <link rel="icon" type="image/x-icon" href="static/images/favicon.ico"> -->
@@ -71,36 +71,442 @@
 
   <main id="main-content">
 
-    <!-- Header -->
+    <!-- ============================== HEADER ============================== -->
     <section class="hero">
       <div class="hero-body">
         <div class="container is-max-desktop">
           <div class="columns is-centered">
             <div class="column has-text-centered">
-              <h1 class="title is-1 publication-title">Research Notes</h1>
-              <div class="is-size-5 publication-authors">
+              <h1 class="title is-1 publication-title">Streaming Diffusion Avatars</h1>
+              <div class="is-size-5 publication-authors" style="margin-bottom:2rem;">
                 <span class="author-block">
                   <a href="https://avirupju.github.io" target="_blank">Avirup Dey</a>
                 </span>
               </div>
-              <!-- TODO: one-line description of what these notes cover -->
+              <p class="lede">
+                Working notes from two parallel projects on real-time avatars driven by
+                distilled diffusion models &mdash; one on <strong>controlling</strong> them,
+                one on making them <strong>converse</strong>.
+              </p>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Notes index -->
+    <!-- ========================= STRATEGIC GOALS ========================= -->
+    <section class="section hero is-light">
+      <div class="container is-max-desktop content">
+        <h2 class="title is-3 has-text-centered">Strategic Goals</h2>
+
+        <p>
+          A useful avatar has to do three things at once: render in <strong>real time</strong>,
+          take <strong>direction</strong>, and <strong>hold a conversation</strong>. Streaming
+          diffusion models &mdash; distilled, few-step, block-causal students &mdash; have made the
+          first of these routine. The open questions are the other two, and they pull against the
+          very thing that bought us the speed: distillation bakes the conditioning pathway in.
+          Both projects below attack that tension from opposite ends.
+        </p>
+
+        <ol class="goal-list">
+          <li>
+            <strong>Control a distilled streaming renderer without redistilling it.</strong>
+            Few-step students are expensive to produce and their teachers are often gone or
+            impractical to revisit. If new control signals (head pose, expression) can only be
+            added by rolling back to the teacher and re-running distillation, controllability
+            will never keep pace with the renderers. We ask what can be bolted onto a
+            <em>frozen</em> student, and &mdash; more usefully &mdash; where the hard limit sits.
+          </li>
+          <li>
+            <strong>Close the loop: an avatar that reads the user and responds.</strong>
+            One-way lip-sync is a rendering problem; conversation is a systems problem. The
+            avatar has to listen, decide when to take the floor, respond with speech
+            <em>and</em> the non-verbal behaviour that makes the response legible, all inside a
+            latency budget a human will tolerate.
+          </li>
+          <li>
+            <strong>Find the real bottlenecks, and report them.</strong>
+            Both projects are deliberately pushed until something breaks, then instrumented to
+            establish <em>why</em>. The negative results below are the point, not the residue:
+            an entanglement that cannot be conditioned away, and a speech brain that cannot hold
+            a persona, are what determine where the next engineering effort should go.
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- =========================== PROJECT 1 ============================= -->
     <section class="section">
       <div class="container is-max-desktop content">
-        <h2 class="title is-3">Notes</h2>
 
-        <!-- TODO: add one entry per note.
-        <ul>
-          <li><a href="notes/example-note.html">Note title</a> &mdash; one-line summary</li>
+        <div class="project-header">
+          <span class="project-index">Project 01</span>
+          <span class="pill pill--wall">Expression: blocked</span>
+          <span class="pill pill--win">Pose: controllable</span>
+        </div>
+        <h2 class="title is-3 is-left">Adding Motion Control to a Distilled Audio-Only DiT</h2>
+        <p class="project-sub">
+          Can head pose and expression control be added to a frozen, distilled,
+          audio-conditioned student &mdash; without rolling back to the teacher and redistilling?
+        </p>
+
+        <dl class="spec">
+          <dt>Backbone</dt>
+          <dd>Distilled Wan2.1-T2V-1.3B Self-Forcing student &mdash; 4 denoise steps, block-causal
+              KV cache, image-to-video. Entirely frozen.</dd>
+          <dt>Conditioning</dt>
+          <dd>Identity and appearance arrive through a reference-image anchor (the KV-cache
+              &ldquo;sink&rdquo;); a baked-in audio branch owns the lips.</dd>
+          <dt>What we add</dt>
+          <dd>A trainable motion branch (~0.78 M params) and a spatial PoseGuider (~3.08 M),
+              both zero-initialised, injected additively into blocks 2&ndash;15 and gated by a
+              mouth mask so audio keeps the mouth.</dd>
+          <dt>Scale</dt>
+          <dd>11,050 Hallo3 clips, 10k steps; evaluated on subject-disjoint HDTF held-out pairs
+              plus a controlled MEAD protocol.</dd>
+        </dl>
+
+        <h3 class="title is-5">What worked</h3>
+        <ul class="findings findings--win">
+          <li>
+            <strong>Region ownership is the disentangler.</strong> Masking the motion branch out
+            of a mouth box &mdash; not any loss term &mdash; is what keeps the lips audio-driven.
+            Lip-leak falls from <span class="num">+0.51</span> (no mask) to
+            <span class="num">+0.02</span> (masked), independent of how motion is encoded.
+          </li>
+          <li>
+            <strong>A holistic expression latent plus causal smoothing.</strong> Swapping
+            hand-built landmark/PCA labels for a 512-d VASA latent wins on pose but costs
+            temporal jitter; a causal EMA (&alpha;&nbsp;=&nbsp;0.5) cuts jitter from
+            <span class="num">1.70&times;</span> to <span class="num">1.19&times;</span> real at
+            no lip-sync cost and no identity drift.
+          </li>
+          <li>
+            <strong>Head pose went from inert to reactive &mdash; but only via spatial
+            injection.</strong> A spatially-uniform additive nudge cannot assert a rotation: the
+            baseline branch simply ignores a swapped pose command
+            (command-response correlation <span class="num">+0.75</span>). Replacing the pose role
+            with a rendered-skeleton PoseGuider drops that to <span class="num">+0.01</span>
+            (3/3 pairs move toward the command) while <em>improving</em> lip-sync
+            (Sync-C <span class="num">2.46 &rarr; 4.00</span>).
+          </li>
+          <li>
+            <strong>It generalises.</strong> Trained at scale, the recipe beats the landmark
+            baseline on lip disentanglement and SyncNet on subject-disjoint held-out pairs.
+          </li>
         </ul>
-        -->
 
+        <div class="table-wrap">
+          <table class="data">
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th>Baseline (additive motion)</th>
+                <th>+ PoseGuider</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Pose command-response, corr(swap, self) &darr;</td>
+                <td class="num">+0.75 / +0.68 / +0.74 <em>(inert)</em></td>
+                <td class="num good">+0.01 / +0.10 / +0.01</td>
+              </tr>
+              <tr>
+                <td>Pose-toward-command passes</td>
+                <td class="num">1 / 3</td>
+                <td class="num good">3 / 3</td>
+              </tr>
+              <tr>
+                <td>SyncNet Sync-C, self &uarr;</td>
+                <td class="num">2.46</td>
+                <td class="num good">4.00</td>
+              </tr>
+              <tr>
+                <td>Mouth jitter, &times; real &darr;</td>
+                <td class="num">0.73 / 0.74 / 1.33</td>
+                <td class="num good">0.37 / 0.60 / 1.05</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="table-note">
+          Pose <em>reactivity</em> is established; faithful pose <em>tracking</em> is not &mdash;
+          accuracy against the commanded rotation is only ~1/3 per pair, and our solvePnP pose
+          metric proved unreliable, so pose is judged visually.
+        </p>
+
+        <h3 class="title is-5">Where it stops: expression is bound to the reference image</h3>
+        <p>
+          Pose yielded. Expression did not &mdash; and we spent most of the project establishing
+          that this is structural rather than a tuning failure. Four independent probes agree:
+        </p>
+
+        <ul class="findings findings--wall">
+          <li>
+            <strong>Losses cannot manufacture the split.</strong> Label-masking, a region-split
+            invariance loss, and a swap-consistency loss were all tried. The best pulled lip-leak
+            to <span class="num">&minus;0.05</span> at 3k steps, then regressed to
+            <span class="num">+0.09</span> by 5k with high variance. Natural data does not contain
+            the lip&harr;expression independence the loss is asked to find.
+          </li>
+          <li>
+            <strong>Text is not a knob.</strong> Captioning the same render
+            &ldquo;smiling&rdquo; vs &ldquo;angry&rdquo; moves 3 of 4 expression channels in the
+            <em>same</em> direction &mdash; a conditioning nudge, not comprehension. The distilled
+            student runs a single conditional forward, so there is no CFG to amplify a prompt.
+          </li>
+          <li>
+            <strong>Expression lives in the reference anchor, and rides there for the whole
+            clip.</strong> Holding audio fixed and varying only the reference still, non-lip
+            channels stay near-constant (std <span class="num">0.01&ndash;0.05</span>, drift
+            &asymp;&nbsp;0) at whatever the anchor was wearing, while the mouth varies freely.
+            A smiling reference smiles for 49 frames; it never relaxes to neutral.
+          </li>
+          <li>
+            <strong>Identity and expression are the same tensor.</strong> Turning the anchor down
+            does reduce the smile &mdash; and takes identity with it: ArcFace similarity to the
+            reference collapses <span class="num">0.89 &rarr; 0.42</span> and generation
+            destabilises (face-detect rate <span class="num">1.00 &rarr; 0.70</span>). Per-block
+            ablation shows identity redundantly spread across all 30 block-sinks and expression
+            <em>not</em> block-separable: it saturates with no knee. A scalar cannot separate them.
+          </li>
+          <li>
+            <strong>The decisive test: a driving track cannot override the anchor.</strong> A
+            controlled MEAD design (2 subjects &times; 3 anchor emotions &times; 3 driving-track
+            emotions, same-subject so identity is not a confound) gives 18 cells. Only
+            <span class="num">5 / 14</span> conflicting cells moved toward the track. A
+            sad-anchored avatar driven by a strongly happy track still wears the sad face; the
+            angry track never angers any output. Across a row, the anchor sets the tone.
+          </li>
+        </ul>
+
+        <div class="verdict verdict--wall">
+          <h4>Verdict</h4>
+          <p>
+            <strong>Pose can be added post-hoc to a frozen distilled student; expression cannot
+            &mdash; it is entangled with the identity of the reference image, and no amount of
+            conditioning gets around it.</strong>
+          </p>
+          <p>
+            The mechanism is specific, and it is a property of distillation rather than of our
+            branch: the student has locked conditioning authority to reference + audio. A
+            post-hoc branch is therefore either damped into irrelevance or perturbs the trunk
+            dirtily, and the mouth mask gates the <em>injection site</em> rather than the
+            <em>output</em> &mdash; control written to neighbouring tokens propagates inward
+            through self-attention and the frozen trunk re-renders a locally coherent face.
+            On a frozen distilled trunk, masks are not output invariance.
+          </p>
+          <p>
+            That rules out the cheap fixes by demonstration rather than assumption, which points
+            at the remaining route: neutralise the anchor's expression so it carries identity
+            only, and place a <em>learned</em> attention adapter on the ~8 early/mid blocks where
+            the expression-responsive anchor signal concentrates &mdash; co-trained with an
+            expression guider and an audio-lip-preservation term.
+          </p>
+        </div>
+
+        <h3 class="title is-5">Results</h3>
+        <div class="results-slot">
+          <i class="fas fa-film"></i>
+          Pose-transfer and MEAD override clips to be added here.
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =========================== PROJECT 2 ============================= -->
+    <section class="section hero is-light">
+      <div class="container is-max-desktop content">
+
+        <div class="project-header">
+          <span class="project-index">Project 02</span>
+          <span class="pill pill--win">Real-time</span>
+          <span class="pill pill--open">Speech brain: external</span>
+        </div>
+        <h2 class="title is-3 is-left">A Conversational Avatar That Reads the User</h2>
+        <p class="project-sub">
+          A controllable one-way avatar is not enough. Can the avatar listen to a user and reply
+          with both appropriate speech and the non-verbal behaviour that sells it &mdash; in real
+          time?
+        </p>
+
+        <dl class="spec">
+          <dt>Renderer</dt>
+          <dd>A block-causal diffusion-forcing talking head: reference portrait + driving audio
+              &rarr; video, with an extra branch that ingests the <em>user's</em> audio and motion
+              for reactive listening.</dd>
+          <dt>Speech brain</dt>
+          <dd>Moshi (full-duplex ~7 B speech model, Mimi codec) generates the avatar's spoken
+              reply, which is handed to the renderer as its avatar-audio track.</dd>
+          <dt>Evaluation</dt>
+          <dd>RealTalk dyadic conversations, 3 subjects; per-frame speaker annotations used to
+              select windows and gate audio per speaker.</dd>
+        </dl>
+
+        <h3 class="title is-5">The finding that shaped the system</h3>
+        <p>
+          The renderer <strong>does not speak on its own.</strong> It generates the avatar's
+          non-verbal dynamics &mdash; head pose, blinks, reactive listening motion &mdash; from the
+          user branch, but its lip and speech motion comes entirely from a separately supplied
+          audio track. Driven with silence it listens and reacts convincingly and never utters a
+          word. Everything below follows from having to source speech externally.
+        </p>
+
+        <h3 class="title is-5">What worked</h3>
+        <ul class="findings findings--win">
+          <li>
+            <strong>It streams in real time.</strong> Measured on one GPU: motion generation
+            <span class="num">11.7 ms/frame (85.7 fps)</span> &mdash; 3.4&times; faster than the
+            25 fps budget &mdash; pixel decode <span class="num">16.6 ms/frame</span>, so a full
+            speaker render runs at <span class="num">~28 ms/frame (~35 fps)</span>. Moshi itself
+            runs ~1.7&times; faster than its own audio frame rate. An earlier
+            &ldquo;12 fps&rdquo; figure turned out to be the offline batch harness, not the model:
+            cutting denoise steps 10&rarr;2 barely moved it, proving the diffusion core was never
+            the bottleneck.
+          </li>
+          <li>
+            <strong>The avatar listens, then takes the floor naturally.</strong> Voice-activity
+            endpointing with a minimum-run filter (&ge;&nbsp;0.32 s, so breaths do not count as
+            speech), a 0.5 s pause, repositioning of the reply, and a barge-in guard that re-mutes
+            on user speech. This cut the response gap on one subject from
+            <span class="num">~17 s</span> to <span class="num">~0.5 s</span>.
+          </li>
+          <li>
+            <strong>Two avatars hold clean, balanced turns.</strong> An explicit floor token
+            decides who speaks. The key insight: a full-duplex model answers <em>in overlap</em>
+            while still the listener, and muting it loses that reply. Force-silencing the listener
+            on <em>both</em> streams &mdash; audio tokens and the text inner monologue &mdash;
+            makes it genuinely hold its turn. Result: overlap <span class="num">0.000</span> with
+            airtime split <span class="num">28% / 27%</span>.
+          </li>
+          <li>
+            <strong>Autoregressive scale drift, diagnosed and fixed.</strong> Over 30 s the avatar
+            progressively zoomed toward the camera (<span class="num">1.40&times;</span>,
+            monotonic), worst during silent listening when the audio conditioning is zeroed and the
+            motion branch free-runs &mdash; there is no anchor back to the reference scale. A
+            training-free de-trend of the motion latent before decoding
+            (&tau;&nbsp;=&nbsp;4 s) flattens it to <span class="num">1.01&times;</span> while
+            preserving lips and blinks. Acting in pixel space cannot work: a face that has zoomed
+            in cannot be un-cropped.
+          </li>
+        </ul>
+
+        <div class="table-wrap">
+          <table class="data">
+            <thead>
+              <tr>
+                <th>Stage</th>
+                <th>Measured</th>
+                <th>vs. real time (25 fps)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Motion generation</td>
+                <td class="num">11.7 ms/frame (85.7 fps)</td>
+                <td class="num good">3.4&times; faster</td>
+              </tr>
+              <tr>
+                <td>Pixel decode</td>
+                <td class="num">16.6 ms/frame (60 fps)</td>
+                <td class="num good">1.5&times; faster</td>
+              </tr>
+              <tr>
+                <td>Speaker render (motion + decode)</td>
+                <td class="num">~28 ms/frame (~35 fps)</td>
+                <td class="num good">faster than real time</td>
+              </tr>
+              <tr>
+                <td>Speech model (one avatar)</td>
+                <td class="num">~47 ms/step (80 ms audio frame)</td>
+                <td class="num good">~1.7&times; faster</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="table-note">
+          Only the speaker waits on the speech model; the listener renders reactive motion with no
+          audio dependency and never sits on the critical path. The per-stage numbers put a
+          sub-second handoff within reach &mdash; though the streaming loop itself is not yet
+          built, and the current code renders offline in batch.
+        </p>
+
+        <h3 class="title is-5">Where it stops: the speech brain</h3>
+        <ul class="findings findings--wall">
+          <li>
+            <strong>Speech must be supplied externally.</strong> This is the renderer's design, not
+            a bug we can tune away &mdash; and it makes the quality of the whole system hostage to
+            whatever produces the speech.
+          </li>
+          <li>
+            <strong>The replies are not smart enough.</strong> After ~3&ndash;4 coherent turns each
+            avatar drifts back to an assistant persona (&ldquo;What can I do for you?&rdquo;) and
+            the exchange runs dry. This is not turn-taking and not the seed &mdash; we fixed both.
+            It is a bot-to-bot ceiling: the speech model's brain is a fixed, unpromptable 7 B LLM,
+            and with no human grounding and no system prompt, two of them relax into their trained
+            register. Holding a persona across many turns needs a promptable or stronger LLM
+            &mdash; i.e. unbundling speech generation into an LLM + TTS cascade &mdash; while
+            keeping the floor-token turn-taking that already works.
+          </li>
+          <li>
+            <strong>The codec handoff costs articulation.</strong> Speech arrives as ~1.1 kbps
+            codec tokens, is decoded to a waveform, then re-encoded by the renderer's own audio
+            encoder to drive the mouth. That double-encode smears the features
+            (cosine <span class="num">0.87</span> vs clean) and cuts mouth opening
+            <span class="num">~30%</span>, with occasional dropped syllables. Speech enhancement
+            and super-resolution on the decoded audio were tested and do <em>not</em> recover it
+            &mdash; detail the codec discarded cannot be restored downstream. The fix belongs at
+            the handoff: a learned adapter between the two feature spaces, or a renderer that
+            ingests the speech model's features natively.
+          </li>
+        </ul>
+
+        <div class="verdict">
+          <h4>Verdict</h4>
+          <p>
+            <strong>The system streams in real time and the avatar genuinely reads the user</strong>
+            &mdash; listening with appropriate non-verbal behaviour, taking the floor at a natural
+            half-second beat, and responding to both the user's speech and its own.
+          </p>
+          <p>
+            The drawback is that the speech itself must come from outside, and the brain we
+            currently use for it is the weak link: fast enough, but its responses do not hold up
+            over a conversation. The rendering and interaction layers are not what is limiting the
+            system &mdash; the language model is &mdash; which is an encouraging place for the
+            bottleneck to sit, since it is replaceable without touching the parts that work.
+          </p>
+        </div>
+
+        <h3 class="title is-5">Results</h3>
+        <div class="results-slot">
+          <i class="fas fa-film"></i>
+          Ground-truth vs. agent comparison clips to be added here.
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============================ TAKEAWAY ============================= -->
+    <section class="section">
+      <div class="container is-max-desktop content">
+        <h2 class="title is-3 has-text-centered">Read Together</h2>
+        <p>
+          The two projects meet at the same seam from opposite sides. Project 1 establishes that a
+          distilled streaming renderer will give up head pose but holds expression hostage to the
+          reference image &mdash; conditioning authority is fixed at distillation time. Project 2
+          builds the conversational loop on top of a streaming renderer and finds the rendering and
+          interaction layers comfortably real-time, with the language model as the binding
+          constraint.
+        </p>
+        <p>
+          Taken together they say something fairly specific about where effort should go. Speed is
+          solved. The two things that are not are <em>expression authority inside a distilled
+          model</em> &mdash; which needs a learned edit to the anchor pathway, not more
+          conditioning &mdash; and <em>a speech brain that can be steered</em>. Notably, the fix
+          for the first now runs through the second project: using its reenactment stage to
+          produce an identity-only, expression-neutral anchor is what makes a learned attention
+          edit worth attempting.
+        </p>
       </div>
     </section>
 

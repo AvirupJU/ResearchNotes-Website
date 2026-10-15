@@ -751,3 +751,212 @@ a:focus {
 
 
 
+
+
+/* ===================================================================
+   Research-notes components
+   =================================================================== */
+
+/* Left-aligned section headings (override the centred accent rule) */
+.title.is-3.is-left {
+  text-align: left;
+}
+.title.is-3.is-left::after {
+  left: 0;
+  transform: none;
+}
+
+/* Lede paragraph under the page title */
+.lede {
+  font-size: 1.2rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  max-width: 44rem;
+  margin: 0 auto;
+}
+
+/* --- Strategic goals ------------------------------------------------ */
+.goal-list {
+  counter-reset: goal;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.goal-list li {
+  counter-increment: goal;
+  position: relative;
+  padding-left: 3rem;
+  margin-bottom: 1.5rem;
+}
+.goal-list li::before {
+  content: counter(goal);
+  position: absolute;
+  left: 0;
+  top: 0.1rem;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--primary-color);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.goal-list strong {
+  color: var(--text-primary);
+}
+
+/* --- Project cards -------------------------------------------------- */
+.project-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+.project-index {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--primary-color);
+}
+.project-sub {
+  color: var(--text-secondary);
+  font-size: 1.05rem;
+  margin-bottom: 2rem;
+}
+
+/* --- Status pills --------------------------------------------------- */
+.pill {
+  display: inline-block;
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+.pill--win   { background: #dcfce7; color: #166534; }
+.pill--wall  { background: #fee2e2; color: #991b1b; }
+.pill--open  { background: #fef3c7; color: #92400e; }
+
+/* --- Finding lists -------------------------------------------------- */
+.findings {
+  list-style: none;
+  margin: 0 0 1.5rem 0;
+  padding: 0;
+}
+.findings li {
+  position: relative;
+  padding-left: 1.9rem;
+  margin-bottom: 0.85rem;
+  line-height: 1.6;
+}
+.findings li::before {
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+.findings--win li::before  { content: '\2713'; color: #16a34a; }
+.findings--wall li::before { content: '\2715'; color: #dc2626; }
+
+/* --- Verdict callout ------------------------------------------------ */
+.verdict {
+  border-left: 4px solid var(--primary-color);
+  background: var(--background-secondary);
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+  padding: 1.25rem 1.5rem;
+  margin: 2rem 0;
+}
+.verdict h4 {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--primary-color);
+  margin: 0 0 0.5rem 0;
+}
+.verdict p { margin: 0; }
+.verdict p + p { margin-top: 0.75rem; }
+.verdict--wall { border-left-color: #dc2626; }
+.verdict--wall h4 { color: #dc2626; }
+
+/* --- Compact data tables -------------------------------------------- */
+.table-wrap {
+  overflow-x: auto;
+  margin: 1.5rem 0;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+}
+table.data {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+  margin: 0;
+}
+table.data th,
+table.data td {
+  padding: 0.6rem 0.9rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+table.data thead th {
+  background: var(--background-secondary);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  font-weight: 700;
+}
+table.data tbody tr:last-child td { border-bottom: none; }
+table.data td:first-child { white-space: normal; }
+table.data .num { font-variant-numeric: tabular-nums; }
+table.data .good { color: #166534; font-weight: 600; }
+table.data .bad  { color: #991b1b; font-weight: 600; }
+.table-note {
+  font-size: 0.85rem;
+  color: var(--text-light);
+  margin-top: -0.75rem;
+}
+
+/* --- Results placeholder -------------------------------------------- */
+.results-slot {
+  border: 2px dashed var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  color: var(--text-light);
+  background: var(--background-secondary);
+}
+.results-slot i { font-size: 1.5rem; margin-bottom: 0.5rem; display: block; }
+
+/* --- Stack / spec list ---------------------------------------------- */
+.spec {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.5rem 1.25rem;
+  margin: 1.5rem 0;
+  font-size: 0.95rem;
+}
+.spec dt {
+  font-weight: 700;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding-top: 0.15rem;
+}
+.spec dd { margin: 0; }
+
+@media screen and (max-width: 600px) {
+  .spec { grid-template-columns: 1fr; gap: 0.15rem 0; }
+  .spec dd { margin-bottom: 0.9rem; }
+  .goal-list li { padding-left: 2.6rem; }
+}
