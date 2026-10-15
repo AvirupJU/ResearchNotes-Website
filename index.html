@@ -163,8 +163,9 @@
               makes it real-time. The four levels are spread across the window, not re-applied to
               one block.</dd>
           <dt>Conditioning</dt>
-          <dd>Identity and appearance arrive through a reference-image anchor (the KV-cache
-              &ldquo;sink&rdquo;); a baked-in audio branch owns the lips.</dd>
+          <dd>Identity and appearance arrive through a persistent reference-image
+              <em>style anchor</em> in the KV cache, fed zero audio; a baked-in audio branch owns
+              the lips. See the anchor structure below.</dd>
           <dt>What we add</dt>
           <dd>A trainable motion branch (~0.78 M params) and a spatial PoseGuider (~3.08 M),
               both zero-initialised, injected additively into blocks 2&ndash;15 and gated by a
@@ -173,6 +174,65 @@
           <dd>11,050 Hallo3 clips, 10k steps; evaluated on subject-disjoint HDTF held-out pairs
               plus a controlled MEAD protocol.</dd>
         </dl>
+
+        <h3 class="title is-5">Long-range consistency: a bounded dual-anchor KV cache</h3>
+        <p>
+          The rolling window gives strong short-range refinement, but its receptive field is
+          <strong>bounded</strong>: once a frame leaves the window it can never be revisited, so
+          long-term consistency has to be held from a short temporal horizon. That is what leaves
+          such a system open to slow drift in identity, colour tone and expression style. The
+          remedy is to augment sliding-window denoising with a <strong>bounded KV cache carrying
+          two anchors</strong>, so that attention keys at each step are assembled as:
+        </p>
+
+        <div class="keyseq">
+          <span class="anchor-style">style anchor</span>
+          <span class="sep">|</span>
+          <span class="anchor-temp">temporal cache</span>
+          <span class="sep">|</span>
+          <span>current window</span>
+        </div>
+
+        <p>
+          The temporal cache is capped by a fixed token budget, which keeps per-step compute
+          constant rather than growing with the clip.
+        </p>
+
+        <p>
+          <strong>Temporal anchor (recent clean KV).</strong> After each clean block is emitted,
+          its KV states are written into a rolling cache that retains only the most recent clean
+          tokens within the budget. This stabilises short-term dynamics &mdash; head motion, lip
+          trajectories &mdash; and suppresses boundary flicker as the window slides.
+        </p>
+
+        <p>
+          <strong>Style anchor (RoPE re-indexed).</strong> A reference frame is kept as a
+          persistent style anchor to preserve identity and appearance. Its keys are cached in
+          <em>pre-RoPE</em> space and RoPE is applied on the fly, so the anchor holds a fixed
+          <em>relative</em> position with respect to the current attention context. Writing
+          <code>u<sub>i</sub></code> for the absolute index of the first non-anchor frame at step
+          <code>i</code> &mdash; the first frame of [temporal cache | current window] &mdash; the
+          anchor is assigned a virtual index <code>u<sub>i</sub> + d</code> for a fixed offset
+          <code>d</code> (default <code>d = &minus;1</code>):
+        </p>
+
+        <div class="formula">
+          <code>K&#771;<sub>anc</sub>(i) = RoPE(K<sub>anc</sub><sup>pre</sup>, u<sub>i</sub> + d)</code>
+        </div>
+
+        <p>
+          Without this re-indexing schedule the anchor's phase would drift as
+          <code>u<sub>i</sub></code> grows; with it, the reference behaves as a
+          <em>persistent style anchor</em> rather than a receding, temporally distant frame.
+          Combined with zeroing the anchor's audio, it supplies identity guidance without
+          injecting stale speech content.
+        </p>
+
+        <p>
+          This structure is what the expression result below turns on. The style anchor is the
+          mechanism that holds identity steady across an unbounded clip &mdash; and it turns out
+          to be carrying rather more than identity.
+        </p>
 
         <h3 class="title is-5">What worked</h3>
         <ul class="findings findings--win">

@@ -964,3 +964,34 @@ table.data .bad  { color: #991b1b; font-weight: 600; }
   .spec dd { margin-bottom: 0.9rem; }
   .goal-list li { padding-left: 2.6rem; }
 }
+
+/* --- Formula / attention-layout displays ---------------------------- */
+.formula {
+  text-align: center;
+  margin: 1.5rem 0;
+}
+.formula code {
+  display: inline-block;
+  font-size: 0.95rem !important;
+  padding: 0.55rem 1rem !important;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-color);
+}
+.keyseq {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem;
+  margin: 1.5rem 0;
+  font-size: 0.9rem;
+}
+.keyseq span {
+  padding: 0.5rem 0.9rem;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-color);
+  background: var(--background-primary);
+  font-weight: 600;
+}
+.keyseq .anchor-style { border-color: var(--primary-color); color: var(--primary-color); }
+.keyseq .anchor-temp  { border-color: #0ea5e9; color: #0369a1; }
+.keyseq .sep { border: none; background: none; color: var(--text-light); font-weight: 400; padding: 0.5rem 0; }
