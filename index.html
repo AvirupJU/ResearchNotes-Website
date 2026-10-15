@@ -149,8 +149,19 @@
 
         <dl class="spec">
           <dt>Backbone</dt>
-          <dd>Distilled Wan2.1-T2V-1.3B Self-Forcing student &mdash; 4 denoise steps, block-causal
-              KV cache, image-to-video. Entirely frozen.</dd>
+          <dd>Distilled Wan2.1-T2V-1.3B Self-Forcing student, image-to-video, block-causal KV
+              cache. Entirely frozen.</dd>
+          <dt>Sampling</dt>
+          <dd>A diffusion-forcing <em>diagonal rollout</em>, not an N-step sampler re-denoising one
+              tensor. A sliding window holds four 4-frame blocks, each sitting at a different noise
+              level &mdash; a staircase (1000 / 800 / 400 / 200). Every network forward advances the
+              whole diagonal by one: the block that reaches the bottom exits clean, the others each
+              step down a level, and a fresh pure-noise block enters at the back. So a block is
+              refined through four noise levels over its lifetime in the window, while the
+              steady-state cost is <strong>one forward per emitted block</strong>
+              (&asymp;&nbsp;<span class="num">n_blocks + 3</span> in total) &mdash; which is what
+              makes it real-time. The four levels are spread across the window, not re-applied to
+              one block.</dd>
           <dt>Conditioning</dt>
           <dd>Identity and appearance arrive through a reference-image anchor (the KV-cache
               &ldquo;sink&rdquo;); a baked-in audio branch owns the lips.</dd>
@@ -250,7 +261,8 @@
             <strong>Text is not a knob.</strong> Captioning the same render
             &ldquo;smiling&rdquo; vs &ldquo;angry&rdquo; moves 3 of 4 expression channels in the
             <em>same</em> direction &mdash; a conditioning nudge, not comprehension. The distilled
-            student runs a single conditional forward, so there is no CFG to amplify a prompt.
+            student runs one <em>conditional</em> forward per window slide with no unconditional
+            pass alongside it, so there is no CFG to amplify a prompt.
           </li>
           <li>
             <strong>Expression lives in the reference anchor, and rides there for the whole
