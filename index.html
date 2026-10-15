@@ -100,33 +100,37 @@
         <h2 class="title is-3 has-text-centered">Strategic Goals</h2>
 
         <p>
-          A useful avatar has to do three things at once: render in <strong>real time</strong>,
-          take <strong>direction</strong>, and <strong>hold a conversation</strong>. Streaming
-          diffusion models &mdash; distilled, few-step, block-causal students &mdash; have made the
-          first of these routine. The open questions are the other two, and the projects below
-          take one each &mdash; separate lines of work with distinct aims, methods and
-          evaluation, reported here as such. Both are deliberately pushed until something
-          breaks, then instrumented to establish <em>why</em>: the negative results are the
-          point, not the residue, since an entanglement that cannot be conditioned away and a
-          speech brain that cannot hold a persona are what determine where the next effort
-          should go.
+          A useful avatar needs to do three things well: render in real time, respond to direction, and hold a conversation. 
+          Recent advances in streaming diffusion models like distillation and block-causal generation have made real-time 
+          rendering increasingly practical. But giving these models precise control and making them genuinely conversational 
+          remain open challenges.
         </p>
+        <p>The two projects below tackle these problems from different angles. The first asks how much control we can add to an 
+          existing, highly optimised renderer without having to train it all over again. The second looks at what it takes to 
+          build an avatar that can listen, respond, and behave naturally in a conversation. In both cases, the goal is not just 
+          to make the streaming fast, but to push these systems beyond the uncanny valley.
+       </p>
 
         <ol class="goal-list">
           <li>
             <strong>Control a distilled streaming renderer without redistilling it.</strong>
-            Few-step students are expensive to produce and their teachers are often gone or
-            impractical to revisit. If new control signals (head pose, expression) can only be
+            Few-step students are expensive to produce and their teachers are often impractical to revisit. 
+            If new control signals (head pose, expression) can only be
             added by rolling back to the teacher and re-running distillation, controllability
-            will never keep pace with the renderers. We ask what can be bolted onto a
-            <em>frozen</em> student, and &mdash; more usefully &mdash; where the hard limit sits.
+            will never keep pace with the renderers. We explore what can be bolted onto a
+            <em>frozen</em> student. We employ a masked injection strategy where the audio tokens act within a predefined lip mask, and the
+            pose/expression branches act outside it. We probe the limits of this mechanism keeping the generator backbone frozen. 
           </li>
           <li>
-            <strong>Close the loop: an avatar that reads the user and responds.</strong>
-            One-way lip-sync is a rendering problem; conversation is a systems problem. The
+            <strong>Moving towards a full duplex conversational system.</strong>
+            One-way streaming avatar is a rendering problem; conversation is a two-way problem. The
             avatar has to listen, decide when to take the floor, respond with speech
             <em>and</em> the non-verbal behaviour that makes the response legible, all inside a
-            latency budget a human will tolerate.
+            latency budget a human will tolerate. Previous works addressed speaking and listening individually and often resorted to
+            a relay of ASR-LLM-TTS-Render which introduced corruptions and latency leading to "uncanny beahaviour". Here, we bypass
+            the sequence: our diffusion renderer remains active throughout - while listening it receives non-verbal cues which decode into
+            pose and expressions, and while speaking a Speech-to-Speech engine generates audio tokens on the fly which decode into the avatar's
+            response.   
           </li>
         </ol>
       </div>
