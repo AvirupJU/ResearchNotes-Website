@@ -103,9 +103,9 @@
           A useful avatar has to do three things at once: render in <strong>real time</strong>,
           take <strong>direction</strong>, and <strong>hold a conversation</strong>. Streaming
           diffusion models &mdash; distilled, few-step, block-causal students &mdash; have made the
-          first of these routine. The open questions are the other two, and they pull against the
-          very thing that bought us the speed: distillation bakes the conditioning pathway in.
-          Both projects below attack that tension from opposite ends.
+          first of these routine. The open questions are the other two. The projects below take
+          one each &mdash; separate lines of work with distinct aims, methods and evaluation,
+          reported here as such.
         </p>
 
         <ol class="goal-list">
@@ -483,30 +483,6 @@
           Ground-truth vs. agent comparison clips to be added here.
         </div>
 
-      </div>
-    </section>
-
-    <!-- ============================ TAKEAWAY ============================= -->
-    <section class="section">
-      <div class="container is-max-desktop content">
-        <h2 class="title is-3 has-text-centered">Read Together</h2>
-        <p>
-          The two projects meet at the same seam from opposite sides. Project 1 establishes that a
-          distilled streaming renderer will give up head pose but holds expression hostage to the
-          reference image &mdash; conditioning authority is fixed at distillation time. Project 2
-          builds the conversational loop on top of a streaming renderer and finds the rendering and
-          interaction layers comfortably real-time, with the language model as the binding
-          constraint.
-        </p>
-        <p>
-          Taken together they say something fairly specific about where effort should go. Speed is
-          solved. The two things that are not are <em>expression authority inside a distilled
-          model</em> &mdash; which needs a learned edit to the anchor pathway, not more
-          conditioning &mdash; and <em>a speech brain that can be steered</em>. Notably, the fix
-          for the first now runs through the second project: using its reenactment stage to
-          produce an identity-only, expression-neutral anchor is what makes a learned attention
-          edit worth attempting.
-        </p>
       </div>
     </section>
 
