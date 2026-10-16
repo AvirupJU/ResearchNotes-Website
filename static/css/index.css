@@ -870,27 +870,6 @@ a:focus {
 .findings--win li::before  { content: '\2713'; color: #16a34a; }
 .findings--wall li::before { content: '\2715'; color: #dc2626; }
 
-/* --- Verdict callout ------------------------------------------------ */
-.verdict {
-  border-left: 4px solid var(--primary-color);
-  background: var(--background-secondary);
-  border-radius: 0 var(--border-radius) var(--border-radius) 0;
-  padding: 1.25rem 1.5rem;
-  margin: 2rem 0;
-}
-.verdict h4 {
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--primary-color);
-  margin: 0 0 0.5rem 0;
-}
-.verdict p { margin: 0; }
-.verdict p + p { margin-top: 0.75rem; }
-.verdict--wall { border-left-color: #dc2626; }
-.verdict--wall h4 { color: #dc2626; }
-
 /* --- Compact data tables -------------------------------------------- */
 .table-wrap {
   overflow-x: auto;
