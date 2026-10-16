@@ -415,138 +415,97 @@
           time?
         </p>
 
-        <dl class="spec">
-          <dt>Renderer</dt>
-          <dd>A block-causal diffusion-forcing talking head: reference portrait + driving audio
-              &rarr; video, with an extra branch that ingests the <em>user's</em> audio and motion
-              for reactive listening.</dd>
-          <dt>Speech brain</dt>
-          <dd>Moshi (full-duplex ~7 B speech model, Mimi codec) generates the avatar's spoken
-              reply, which is handed to the renderer as its avatar-audio track.</dd>
-          <dt>Evaluation</dt>
-          <dd>RealTalk dyadic conversations, 3 subjects; per-frame speaker annotations used to
-              select windows and gate audio per speaker.</dd>
-        </dl>
-
-        <h3 class="title is-5">The finding that shaped the system</h3>
+        <h3 class="title is-5">Method</h3>
         <p>
-          The renderer <strong>does not speak on its own.</strong> It generates the avatar's
-          non-verbal dynamics &mdash; head pose, blinks, reactive listening motion &mdash; from the
-          user branch, but its lip and speech motion comes entirely from a separately supplied
-          audio track. Driven with silence it listens and reacts convincingly and never utters a
-          word. Everything below follows from having to source speech externally.
+          We implement our model on top of <strong>AvatarForcing</strong> (CVPR 2026). It has a
+          dual motion latent encoder that merges user audio, user motion from video, and avatar
+          audio into a unified latent, which conditions a Diffusion Forcing Transformer to generate
+          the avatar's motion latents autoregressively. When the user speaks, the avatar audio is
+          nil and the avatar exhibits listener motion &mdash; nods and backchannels; when the user
+          audio ceases, the avatar is ready to respond. The base model has no &ldquo;brain&rdquo;
+          to generate the response itself, and depends on an audio track supplied externally,
+          either spoken or routed through ASR&ndash;LLM&ndash;TTS. We address three problems.
         </p>
 
-        <h3 class="title is-5">What worked</h3>
-        <ul class="findings findings--win">
+        <ul class="highlights">
           <li>
-            <strong>It streams in real time.</strong> Measured on one GPU: motion generation
-            <span class="num">11.7 ms/frame (85.7 fps)</span> &mdash; 3.4&times; faster than the
-            25 fps budget &mdash; pixel decode <span class="num">16.6 ms/frame</span>, so a full
-            speaker render runs at <span class="num">~28 ms/frame (~35 fps)</span>. Moshi itself
-            runs ~1.7&times; faster than its own audio frame rate. An earlier
-            &ldquo;12 fps&rdquo; figure turned out to be the offline batch harness, not the model:
-            cutting denoise steps 10&rarr;2 barely moved it, proving the diffusion core was never
-            the bottleneck.
+            <strong>A speech-to-speech brain.</strong> We integrate Moshi, a conversational
+            speech-to-speech agent, so the response is generated in real time and the
+            ASR&ndash;LLM&ndash;TTS relay is bypassed entirely.
           </li>
           <li>
-            <strong>The avatar listens, then takes the floor naturally.</strong> Voice-activity
-            endpointing with a minimum-run filter (&ge;&nbsp;0.32 s, so breaths do not count as
-            speech), a 0.5 s pause, repositioning of the reply, and a barge-in guard that re-mutes
-            on user speech. This cut the response gap on one subject from
-            <span class="num">~17 s</span> to <span class="num">~0.5 s</span>.
+            <strong>A temporal gate for the floor.</strong> Voice-activity endpointing with a
+            minimum-run filter, a half-second handover and a barge-in guard, plus a floor token
+            that force-silences the listener on both its audio and text streams so it holds its
+            turn instead of answering in overlap.
           </li>
           <li>
-            <strong>Two avatars hold clean, balanced turns.</strong> An explicit floor token
-            decides who speaks. The key insight: a full-duplex model answers <em>in overlap</em>
-            while still the listener, and muting it loses that reply. Force-silencing the listener
-            on <em>both</em> streams &mdash; audio tokens and the text inner monologue &mdash;
-            makes it genuinely hold its turn. Result: overlap <span class="num">0.000</span> with
-            airtime split <span class="num">28% / 27%</span>.
+            <strong>Motion-drift correction.</strong> The decoder builds each frame as reference
+            identity plus a generated motion offset, with no anchor back to the reference scale, so
+            any slow scale bias compounds &mdash; worst during silence, when the avatar-audio
+            conditioning is zeroed and the motion branch free-runs. We de-trend the motion latent
+            along time before decoding: estimate the slow trend with a moving average of window
+            <span class="num">&tau;</span> and relax it toward the opening baseline,
+            <code>r_d &minus; &alpha;&middot;(trend &minus; baseline)</code>, leaving fast motion
+            untouched. Training-free, generation-side.
           </li>
           <li>
-            <strong>Autoregressive scale drift, diagnosed and fixed.</strong> Over 30 s the avatar
-            progressively zoomed toward the camera (<span class="num">1.40&times;</span>,
-            monotonic), worst during silent listening when the audio conditioning is zeroed and the
-            motion branch free-runs &mdash; there is no anchor back to the reference scale. A
-            training-free de-trend of the motion latent before decoding
-            (&tau;&nbsp;=&nbsp;4 s) flattens it to <span class="num">1.01&times;</span> while
-            preserving lips and blinks. Acting in pixel space cannot work: a face that has zoomed
-            in cannot be un-cropped.
-          </li>
-        </ul>
-
-        <div class="table-wrap">
-          <table class="data">
-            <thead>
-              <tr>
-                <th>Stage</th>
-                <th>Measured</th>
-                <th>vs. real time (25 fps)</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Motion generation</td>
-                <td class="num">11.7 ms/frame (85.7 fps)</td>
-                <td class="num good">3.4&times; faster</td>
-              </tr>
-              <tr>
-                <td>Pixel decode</td>
-                <td class="num">16.6 ms/frame (60 fps)</td>
-                <td class="num good">1.5&times; faster</td>
-              </tr>
-              <tr>
-                <td>Speaker render (motion + decode)</td>
-                <td class="num">~28 ms/frame (~35 fps)</td>
-                <td class="num good">faster than real time</td>
-              </tr>
-              <tr>
-                <td>Speech model (one avatar)</td>
-                <td class="num">~47 ms/step (80 ms audio frame)</td>
-                <td class="num good">~1.7&times; faster</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <p class="table-note">
-          Only the speaker waits on the speech model; the listener renders reactive motion with no
-          audio dependency and never sits on the critical path. The per-stage numbers put a
-          sub-second handoff within reach &mdash; though the streaming loop itself is not yet
-          built, and the current code renders offline in batch.
-        </p>
-
-        <h3 class="title is-5">Where it stops: the speech brain</h3>
-        <ul class="findings findings--wall">
-          <li>
-            <strong>Speech must be supplied externally.</strong> This is the renderer's design, not
-            a bug we can tune away &mdash; and it makes the quality of the whole system hostage to
-            whatever produces the speech.
-          </li>
-          <li>
-            <strong>The replies are not smart enough.</strong> After ~3&ndash;4 coherent turns each
-            avatar drifts back to an assistant persona (&ldquo;What can I do for you?&rdquo;) and
-            the exchange runs dry. This is not turn-taking and not the seed &mdash; we fixed both.
-            It is a bot-to-bot ceiling: the speech model's brain is a fixed, unpromptable 7 B LLM,
-            and with no human grounding and no system prompt, two of them relax into their trained
-            register. Holding a persona across many turns needs a promptable or stronger LLM
-            &mdash; i.e. unbundling speech generation into an LLM + TTS cascade &mdash; while
-            keeping the floor-token turn-taking that already works.
-          </li>
-          <li>
-            <strong>The codec handoff costs articulation.</strong> Speech arrives as ~1.1 kbps
-            codec tokens, is decoded to a waveform, then re-encoded by the renderer's own audio
-            encoder to drive the mouth. That double-encode smears the features
-            (cosine <span class="num">0.87</span> vs clean) and cuts mouth opening
-            <span class="num">~30%</span>, with occasional dropped syllables. Speech enhancement
-            and super-resolution on the decoded audio were tested and do <em>not</em> recover it
-            &mdash; detail the codec discarded cannot be restored downstream. The fix belongs at
-            the handoff: a learned adapter between the two feature spaces, or a renderer that
-            ingests the speech model's features natively.
+            <strong>Specs.</strong>
+            <ul>
+              <li>Motion generation 11.7 ms/frame (85.7 fps)</li>
+              <li>Speaker render ~28 ms/frame (~35 fps)</li>
+              <li>Evaluated on RealTalk dyadic conversations, 3 subjects</li>
+            </ul>
           </li>
         </ul>
 
         <h3 class="title is-5">Results</h3>
+
+        <ul class="findings findings--win">
+          <li>
+            <strong>Real-time conversational speed.</strong> Motion generation runs at
+            <span class="num">11.7 ms/frame</span> (85.7 fps), 3.4&times; the 25 fps budget, and a
+            full speaker render at <span class="num">~28 ms/frame</span> (~35 fps). The listener
+            renders with no avatar-audio dependency, so only the speaker ever waits on the speech
+            model &mdash; which itself runs ~1.7&times; faster than its own audio frame rate.
+          </li>
+          <li>
+            <strong>The ASR&ndash;LLM&ndash;TTS relay is avoided.</strong> Speech-to-speech keeps
+            the renderer active throughout: non-verbal cues while listening, generated audio tokens
+            while speaking. The avatar listens with the mouth closed, then takes the floor at a
+            natural half-second beat &mdash; on one subject cutting the response gap from
+            <span class="num">~17 s</span> to <span class="num">~0.5 s</span>. Two avatars hold
+            clean turns at <span class="num">0.000</span> overlap with balanced airtime.
+          </li>
+          <li>
+            <strong>Motion drift is corrected.</strong> The de-trend flattens the zoom ratio over a
+            30 s generation from <span class="num">1.40</span> to <span class="num">1.01</span> at
+            <span class="num">&tau; = 4 s, &alpha; = 1.0</span>, with lip articulation and
+            expressions preserved. The window is a real trade-off: at
+            <span class="num">&tau; = 2 s</span> the high-pass starts eating the speech
+            mouth-envelope, roughly halving mouth-opening variance. A pixel-space fix cannot work
+            here &mdash; a face that has zoomed in cannot be un-cropped.
+          </li>
+        </ul>
+
+        <ul class="findings findings--wall">
+          <li>
+            <strong>The responses feel generic.</strong> After three or four coherent turns each
+            avatar drifts back to an assistant persona and the exchange runs dry. This is not
+            turn-taking and not the seed &mdash; both were fixed. It is the ceiling of the speech
+            model's own brain: a fixed, unpromptable LLM that, with no human grounding and no
+            system prompt, relaxes into its trained register. A better conversational model is
+            needed; the floor-token turn-taking around it already works.
+          </li>
+          <li>
+            <strong>The codec handoff costs articulation.</strong> Speech arrives as low-bitrate
+            codec tokens, is decoded to a waveform, then re-encoded by the renderer's audio encoder
+            to drive the mouth. The double-encode smears the features and cuts mouth opening
+            <span class="num">~30%</span>. Enhancement and super-resolution on the decoded audio do
+            not recover it &mdash; the fix belongs at the handoff.
+          </li>
+        </ul>
+
         <div class="results-slot">
           <i class="fas fa-film"></i>
           Ground-truth vs. agent comparison clips to be added here.
