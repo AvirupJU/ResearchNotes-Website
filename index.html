@@ -232,31 +232,33 @@
           to be carrying rather more than identity.
         </p>
 
-        <h3 class="title is-5">What worked</h3>
+        <h3 class="title is-5">Results</h3>
+
         <ul class="findings findings--win">
           <li>
-            <strong>Region ownership is the disentangler.</strong> Masking the expression branch out
-            of a mouth box &mdash; not any loss term &mdash; is what keeps the lips audio-driven.
-            Lip-leak falls from <span class="num">+0.51</span> (no mask) to
-            <span class="num">+0.02</span> (masked), independent of how motion is encoded.
+            <strong>Masked injection disentangles lip-sync from externally imposed motion.</strong>
+            The mouth mask &mdash; not any loss term &mdash; is what keeps the lips audio-driven
+            while the expression and pose branches drive everything else. Lip-leak under a swapped
+            command falls from <span class="num">+0.51</span> without the mask to
+            <span class="num">+0.02</span> with it. Loss-side attempts at the same split (label
+            masking, a region-split invariance term, swap-consistency) all plateaued or regressed:
+            region ownership is structural where a loss is not.
           </li>
           <li>
-            <strong>Head pose became controllable &mdash; but only via spatial
-            injection.</strong> A spatially-uniform additive nudge cannot assert a rotation: the
-            baseline branch simply ignores a swapped pose command
-            (mean command-response correlation <span class="num">+0.72</span>). Replacing the pose
-            role with the rendered-skeleton pose branch drops that to <span class="num">+0.04</span>,
-            more than halves the EMOCA pose error against ground truth, and <em>improves</em>
-            lip-sync (Sync-C <span class="num">2.46 &rarr; 4.00</span>).
+            <strong>The avatar still streams in real time with the control branches grafted on.</strong>
+            The two branches add <span class="num">~3.9 M</span> trainable parameters to the frozen
+            <span class="num">1.3 B</span> trunk (~0.3%) and enter as per-block additive residuals
+            inside the existing forward. The diagonal rollout is unchanged &mdash; one network
+            forward still emits one clean block &mdash; so control costs no extra pass over the
+            trunk and no re-distillation.
+          </li>
+          <li>
+            <strong>Head pose tracks the reference video.</strong> Pose is estimated with EMOCA on
+            the generated and the ground-truth video and scored as the Euclidean distance between
+            them. Against the audio-only model &mdash; the frozen student with no pose conditioning
+            at all &mdash; the error is cut by more than half.
           </li>
         </ul>
-
-        <p>
-          <strong>Pose accuracy.</strong> Head pose is estimated with EMOCA on both the generated
-          and the ground-truth video, and scored as the Euclidean distance between them
-          (lower is better). The baseline here is the <strong>audio-only</strong> model &mdash; the
-          frozen student with no pose conditioning at all:
-        </p>
 
         <div class="table-wrap">
           <table class="data">
@@ -281,14 +283,12 @@
             </tbody>
           </table>
         </div>
-        <p class="table-note">
-          Pose error is cut by more than half in self-reconstruction and by ~40% under swap, where
-          the pose command comes from a different identity.
-        </p>
 
         <p>
-          <strong>Reactivity and lip-sync.</strong> Measured instead against the
-          <strong>additive expression</strong> branch, to isolate what the spatial injection changes:
+          The spatial injection is what makes this possible. Measured against the
+          <strong>additive expression branch</strong>, a spatially-uniform nudge cannot assert a
+          rotation &mdash; it simply ignores a swapped pose command &mdash; while the
+          rendered-skeleton pose branch responds to it, at no cost to lip-sync:
         </p>
 
         <div class="table-wrap">
@@ -315,68 +315,11 @@
           </table>
         </div>
 
-        <h3 class="title is-5">Where it stops: expression is bound to the reference image</h3>
-        <p>
-          Pose yielded. Expression did not &mdash; and we spent most of the project establishing
-          that this is structural rather than a tuning failure. Four independent probes agree:
-        </p>
-
-        <ul class="findings findings--wall">
-          <li>
-            <strong>Text is not a knob.</strong> Captioning the same render
-            &ldquo;smiling&rdquo; vs &ldquo;angry&rdquo; moves 3 of 4 expression channels in the
-            <em>same</em> direction &mdash; a conditioning nudge, not comprehension. The distilled
-            student runs one <em>conditional</em> forward per window slide with no unconditional
-            pass alongside it, so there is no CFG to amplify a prompt.
-          </li>
-          <li>
-            <strong>Expression lives in the reference anchor, and rides there for the whole
-            clip.</strong> Holding audio fixed and varying only the reference still, non-lip
-            channels stay near-constant (std <span class="num">0.01&ndash;0.05</span>, drift
-            &asymp;&nbsp;0) at whatever the anchor was wearing, while the mouth varies freely.
-            A smiling reference smiles for 49 frames; it never relaxes to neutral.
-          </li>
-          <li>
-            <strong>Diagnostic: A
-            controlled MEAD design (2 subjects &times; 3 anchor emotions &times; 3 driving-track
-            emotions, same-subject so identity is not a confound) gives 18 predictions. 
-            A driving track cannot override the anchor.</strong>. A sad-anchored avatar driven by a strongly happy track still wears the sad face.
-          </li>
-        </ul>
-
-        <div class="verdict verdict--wall">
-          <h4>Verdict</h4>
-          <p>
-            <strong>Pose can be added post-hoc to a frozen distilled student; expression cannot
-            &mdash; it is entangled with the identity of the reference image, and no amount of
-            conditioning gets around it.</strong>
-          </p>
-          <p>
-            The mechanism is specific, and it is a property of distillation rather than of our
-            branch: the student has locked conditioning authority to reference + audio. A
-            post-hoc branch is therefore either damped into irrelevance or perturbs the trunk
-            dirtily, and the mouth mask gates the <em>injection site</em> rather than the
-            <em>output</em> &mdash; control written to neighbouring tokens propagates inward
-            through self-attention and the frozen trunk re-renders a locally coherent face.
-            On a frozen distilled trunk, masks are not output invariance.
-          </p>
-          <p>
-            That rules out the cheap fixes by demonstration rather than assumption, which points
-            at the remaining route: neutralise the anchor's expression so it carries identity
-            only, and place a <em>learned</em> attention adapter on the ~8 early/mid blocks where
-            the expression-responsive anchor signal concentrates &mdash; co-trained with an
-            expression guider and an audio-lip-preservation term.
-          </p>
-        </div>
-
-        <h3 class="title is-5">Results</h3>
-
-        <p class="result-group-label">Pose transfer</p>
         <p>
           Three panels per clip, labelled in-frame:
           <strong>audio-only</strong> &middot; <strong>with pose control</strong> &middot;
           <strong>GT pose</strong>. The driving pose is retargeted onto each anchor's geometry, so
-          the avatar is asked to follow the driver's head without inheriting his face.
+          the avatar follows the driver's head without inheriting his face.
         </p>
 
         <figure class="pose-demo">
@@ -403,7 +346,33 @@
           </figcaption>
         </figure>
 
-        <p class="result-group-label">Expression override</p>
+        <ul class="findings findings--wall">
+          <li>
+            <strong>Expression transfer is still missing.</strong> Nothing available to condition on
+            moves it. A driving video's emotion does not transfer (the override test below). A text
+            prompt does not either &mdash; captioning the same render &ldquo;smiling&rdquo; versus
+            &ldquo;angry&rdquo; moves 3 of 4 expression channels in the <em>same</em> direction, a
+            nudge rather than comprehension, and the distilled student runs no CFG to amplify one.
+            Audio moves the mouth and nothing else, leaving the rest of the face wearing whatever
+            the reference wore.
+          </li>
+          <li>
+            <strong>Expression is anchored to the reference image by the style anchor &mdash; and
+            the two cannot be prised apart.</strong> Hold audio fixed and vary only the reference
+            still: non-lip channels stay near-constant (std <span class="num">0.01&ndash;0.05</span>,
+            drift &asymp; 0) at the anchor's configuration for the whole clip. Turn the anchor down
+            and the expression does relax &mdash; but identity goes with it, ArcFace similarity to
+            the reference collapsing <span class="num">0.89 &rarr; 0.42</span> as generation
+            destabilises. Per-block ablation finds identity redundantly spread across all 30
+            block-sinks and expression saturating with no knee, so no scalar separates them.
+            <strong>What prevents drift is what holds expression transfer back:</strong> the
+            mechanism that keeps identity steady across an unbounded clip is the same one that pins
+            the face to the reference. Moving it needs a learned edit to the anchor pathway &mdash;
+            an identity-only anchor plus an attention adapter on the blocks that read it &mdash; not
+            more conditioning.
+          </li>
+        </ul>
+
         <p>
           The override test in four cells. In each clip the <em>anchor</em> still sets the KV sink
           and a different clip's <em>track</em> supplies the audio and the per-frame expression
