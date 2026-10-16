@@ -944,37 +944,6 @@ table.data .bad  { color: #991b1b; font-weight: 600; }
   .goal-list li { padding-left: 2.6rem; }
 }
 
-/* --- Formula / attention-layout displays ---------------------------- */
-.formula {
-  text-align: center;
-  margin: 1.5rem 0;
-}
-.formula code {
-  display: inline-block;
-  font-size: 0.95rem !important;
-  padding: 0.55rem 1rem !important;
-  border-radius: var(--border-radius);
-  border: 1px solid var(--border-color);
-}
-.keyseq {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.4rem;
-  margin: 1.5rem 0;
-  font-size: 0.9rem;
-}
-.keyseq span {
-  padding: 0.5rem 0.9rem;
-  border-radius: var(--border-radius);
-  border: 1px solid var(--border-color);
-  background: var(--background-primary);
-  font-weight: 600;
-}
-.keyseq .anchor-style { border-color: var(--primary-color); color: var(--primary-color); }
-.keyseq .anchor-temp  { border-color: #0ea5e9; color: #0369a1; }
-.keyseq .sep { border: none; background: none; color: var(--text-light); font-weight: 400; padding: 0.5rem 0; }
-
 /* --- MEAD override carousel ----------------------------------------- */
 .mead-cell {
   max-width: 420px;
@@ -1048,4 +1017,61 @@ table.data .bad  { color: #991b1b; font-weight: 600; }
   text-transform: uppercase;
   color: var(--primary-color);
   margin: 2.25rem 0 0.75rem;
+}
+
+/* --- Method highlights ---------------------------------------------- */
+.content ul.highlights,
+.highlights {
+  list-style: none;
+  margin: 1.25rem 0 0;
+  margin-left: 0;
+  padding: 0;
+}
+.highlights > li {
+  position: relative;
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+.highlights > li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  background: var(--primary-color);
+}
+.content ul.highlights ul,
+.highlights ul {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  margin-left: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+.highlights ul li {
+  margin: 0;
+  padding: 0.3rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--background-secondary);
+  font-size: 0.87rem;
+  font-variant-numeric: tabular-nums;
+}
+.tag-ours {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: var(--primary-color);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  vertical-align: 0.1em;
 }

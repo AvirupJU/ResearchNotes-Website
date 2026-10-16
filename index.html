@@ -151,86 +151,48 @@
           audio-conditioned student &mdash; without rolling back to the teacher and redistilling?
         </p>
 
-        <dl class="spec">
-          <dt>Backbone</dt>
-          <dd>Distilled Wan2.1-T2V-1.3B Self-Forcing student, image-to-video, block-causal KV
-              cache. Entirely frozen.</dd>
-          <dt>Sampling</dt>
-          <dd>A diffusion-forcing <em>diagonal rollout</em>. A sliding window holds four 4-frame blocks, each sitting at a different noise
-              level. Every forward advances the
-              whole diagonal by one: the block that reaches the bottom exits clean, the others each
-              step down a level, and a fresh pure-noise block enters at the back.</dd>
-          <dt>Conditioning</dt>
-          <dd>Identity and appearance arrive through a persistent reference-image
-              <em>style anchor</em> in the KV cache, fed zero audio; a baked-in audio branch controls
-              the lips. See the anchor structure below.</dd>
-          <dt>What we add</dt>
-          <dd>A trainable expression branch (~0.78 M params) and a spatial pose branch (~3.08 M),
-              both zero-initialised, injected additively into blocks 2&ndash;15 and gated by a
-              mouth mask so audio keeps the mouth.</dd>
-          <dt>Scale</dt>
-          <dd>11,000 talking video clips, 10k steps; evaluated on subject-disjoint HDTF held-out pairs
-              plus a controlled MEAD protocol.</dd>
-        </dl>
-
-        <h3 class="title is-5">Long-range consistency: a bounded dual-anchor KV cache</h3>
+        <h3 class="title is-5">Method</h3>
         <p>
-          The rolling window gives strong short-range refinement, but its receptive field is
-          <strong>bounded</strong>: once a frame leaves the window it can never be revisited, so
-          long-term consistency has to be held from a short temporal horizon. That is what leaves
-          such a system open to slow drift in identity, colour tone and expression style. The
-          remedy is to augment sliding-window denoising with a <strong>bounded KV cache carrying
-          two anchors</strong>, so that attention keys at each step are assembled as:
+          We implement a <strong>one-step streaming diffusion framework</strong> for talking
+          avatars. It generates video from one reference image, speech audio and a text prompt.
+          Identity is anchored by the input image, used as the first frame. Audio conditioning uses
+          a streaming speech encoder (Wav2Vec2) to produce per-frame embeddings. A fixed
+          local-future sliding window with heterogeneous noise levels is jointly denoised, emitting
+          one clean block per step under constant per-step cost.
+        </p>
+        <p>
+          Our addition sits on top of that, after distillation: a new <strong>motion control
+          branch</strong> and a <strong>masked injection strategy</strong> that buys post-hoc pose
+          and expression control without rolling back to the teacher.
         </p>
 
-        <div class="keyseq">
-          <span class="anchor-style">style anchor</span>
-          <span class="sep">|</span>
-          <span class="anchor-temp">temporal cache</span>
-          <span class="sep">|</span>
-          <span>current window</span>
-        </div>
-
-        <p>
-          The temporal cache is capped by a fixed token budget, which keeps per-step compute
-          constant rather than growing with the clip.
-        </p>
-
-        <p>
-          <strong>Temporal anchor (recent clean KV).</strong> After each clean block is emitted,
-          its KV states are written into a rolling cache that retains only the most recent clean
-          tokens within the budget. This stabilises short-term dynamics &mdash; head motion, lip
-          trajectories &mdash; and suppresses boundary flicker as the window slides.
-        </p>
-
-        <p>
-          <strong>Style anchor (RoPE re-indexed).</strong> A reference frame is kept as a
-          persistent style anchor to preserve identity and appearance. Its keys are cached in
-          <em>pre-RoPE</em> space and RoPE is applied on the fly, so the anchor holds a fixed
-          <em>relative</em> position with respect to the current attention context. Writing
-          <code>u<sub>i</sub></code> for the absolute index of the first non-anchor frame at step
-          <code>i</code> &mdash; the first frame of [temporal cache | current window] &mdash; the
-          anchor is assigned a virtual index <code>u<sub>i</sub> + d</code> for a fixed offset
-          <code>d</code> (default <code>d = &minus;1</code>):
-        </p>
-
-        <div class="formula">
-          <code>K&#771;<sub>anc</sub>(i) = RoPE(K<sub>anc</sub><sup>pre</sup>, u<sub>i</sub> + d)</code>
-        </div>
-
-        <p>
-          Without this re-indexing schedule the anchor's phase would drift as
-          <code>u<sub>i</sub></code> grows; with it, the reference behaves as a
-          <em>persistent style anchor</em> rather than a receding, temporally distant frame.
-          Combined with zeroing the anchor's audio, it supplies identity guidance without
-          injecting stale speech content.
-        </p>
-
-        <p>
-          This structure is what the expression result below turns on. The style anchor is the
-          mechanism that holds identity steady across an unbounded clip &mdash; and it turns out
-          to be carrying rather more than identity.
-        </p>
+        <ul class="highlights">
+          <li>
+            <strong>One-step sliding-window denoising.</strong> Local-future look-ahead with
+            heterogeneous noise; emit one clean block per step.
+          </li>
+          <li>
+            <strong>Dual-anchor temporal forcing.</strong> Style anchor (RoPE re-index) + temporal
+            anchor (reuse recent clean blocks) + anchor-audio zero-padding.
+          </li>
+          <li>
+            <strong>Two-stage streaming distillation.</strong> Offline ODE backfill + distribution
+            matching.
+          </li>
+          <li>
+            <strong>Post-hoc motion control.</strong><span class="tag-ours">ours</span>
+            A motion control branch grafted on after distillation, with masked injection routing
+            audio to the lips and the pose/expression branches everywhere else.
+          </li>
+          <li>
+            <strong>Specs.</strong>
+            <ul>
+              <li>40 ms/frame at 512&times;512</li>
+              <li>runs on a 24 GB consumer GPU</li>
+              <li>post-hoc pose control from a reference video</li>
+            </ul>
+          </li>
+        </ul>
 
         <h3 class="title is-5">Results</h3>
 
@@ -246,11 +208,11 @@
           </li>
           <li>
             <strong>The avatar still streams in real time with the control branches grafted on.</strong>
-            The two branches add <span class="num">~3.9 M</span> trainable parameters to the frozen
+            <span class="num">40 ms/frame</span> at 512&times;512 on a 24 GB consumer GPU. The two
+            branches add <span class="num">~3.9 M</span> trainable parameters to the frozen
             <span class="num">1.3 B</span> trunk (~0.3%) and enter as per-block additive residuals
-            inside the existing forward. The diagonal rollout is unchanged &mdash; one network
-            forward still emits one clean block &mdash; so control costs no extra pass over the
-            trunk and no re-distillation.
+            inside the existing forward, so the rollout is unchanged &mdash; one forward still
+            emits one clean block.
           </li>
           <li>
             <strong>Head pose tracks the reference video.</strong> Pose is estimated with EMOCA on
