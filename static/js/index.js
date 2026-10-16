@@ -197,8 +197,8 @@ $(document).ready(function() {
     // Passing them as data-* would hand bulma-carousel the STRING "false", which is
     // truthy, and autoplay would switch itself back on.
     var managed = [];
-    if (document.getElementById('mead-carousel')) {
-        managed = bulmaCarousel.attach('#mead-carousel', {
+    if (document.querySelector('#mead-carousel, #convo-carousel')) {
+        managed = bulmaCarousel.attach('#mead-carousel, #convo-carousel', {
             slidesToShow: 1,
             slidesToScroll: 1,
             loop: true,
