@@ -161,7 +161,7 @@
           one clean block per step under constant per-step cost.
         </p>
         <p>
-          Our addition sits on top of that, after distillation: a new <strong>motion control
+          After distillation: a new <strong>motion control
           branch</strong> and a <strong>masked injection strategy</strong> that buys post-hoc pose
           and expression control without rolling back to the teacher.
         </p>
@@ -180,7 +180,7 @@
             matching.
           </li>
           <li>
-            <strong>Post-hoc motion control.</strong><span class="tag-ours">ours</span>
+            <strong>Post-hoc motion control.</strong>
             A motion control branch grafted on after distillation, with masked injection routing
             audio to the lips and the pose/expression branches everywhere else.
           </li>
@@ -188,8 +188,8 @@
             <strong>Specs.</strong>
             <ul>
               <li>40 ms/frame at 512&times;512</li>
-              <li>runs on a 24 GB consumer GPU</li>
-              <li>post-hoc pose control from a reference video</li>
+              <li>Runs on a 24 GB consumer GPU</li>
+              <li>Post-hoc pose control from a reference video</li>
             </ul>
           </li>
         </ul>
@@ -199,26 +199,22 @@
         <ul class="findings findings--win">
           <li>
             <strong>Masked injection disentangles lip-sync from externally imposed motion.</strong>
-            The mouth mask &mdash; not any loss term &mdash; is what keeps the lips audio-driven
-            while the expression and pose branches drive everything else. Lip-leak under a swapped
-            command falls from <span class="num">+0.51</span> without the mask to
-            <span class="num">+0.02</span> with it. Loss-side attempts at the same split (label
-            masking, a region-split invariance term, swap-consistency) all plateaued or regressed:
-            region ownership is structural where a loss is not.
+            The mouth mask keeps the lips bound to audio 
+            while the expression and pose branches drive everything else. Lip-leak in cross-reenact setting falls from <span class="num">+0.51</span> (without mask) to
+            <span class="num">+0.02</span> (with it).
           </li>
           <li>
             <strong>The avatar still streams in real time with the control branches grafted on.</strong>
             <span class="num">40 ms/frame</span> at 512&times;512 on a 24 GB consumer GPU. The two
             branches add <span class="num">~3.9 M</span> trainable parameters to the frozen
-            <span class="num">1.3 B</span> trunk (~0.3%) and enter as per-block additive residuals
+            <span class="num">1.3 B</span> base (~0.3%) and enter as per-block additive residuals
             inside the existing forward, so the rollout is unchanged &mdash; one forward still
             emits one clean block.
           </li>
           <li>
             <strong>Head pose tracks the reference video.</strong> Pose is estimated with EMOCA on
             the generated and the ground-truth video and scored as the Euclidean distance between
-            them. Against the audio-only model &mdash; the frozen student with no pose conditioning
-            at all &mdash; the error is cut by more than half.
+            them. Against the audio-only model the error is cut by more than half.
           </li>
         </ul>
 
